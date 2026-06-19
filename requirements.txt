@@ -1,0 +1,9 @@
+streamlit
+groq
+python-dotenv
+edge-tts
+faster-whisper
+audio-recorder-streamlit
+streamlit-mermaid
+nest_asyncio
+anyio>=4.8.0,<4.13.0
