@@ -101,9 +101,14 @@ for key, default in [("current_lesson", None), ("language", "English"), ("histor
 @st.cache_resource
 def get_groq_client():
     api_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY"))
+    if not api_key:
+        return None
     return Groq(api_key=api_key)
 
 client = get_groq_client()
+if client is None:
+    st.error("⚠️ GROQ_API_KEY is not set. Please add it in Streamlit Cloud → Settings → Secrets.")
+    st.stop()
 TTS_LANG = {"English": "en", "Hindi": "hi", "Hinglish": "hi"}
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
