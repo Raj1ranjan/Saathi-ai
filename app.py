@@ -3,9 +3,7 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 import json
-from tts import text_to_speech
-from stt import speech_to_text
-from audio_recorder_streamlit import audio_recorder
+
 try:
     from streamlit_mermaid import st_mermaid
     MERMAID_AVAILABLE = True
@@ -13,6 +11,8 @@ except ImportError:
     MERMAID_AVAILABLE = False
 
 st.set_page_config(page_title="Saathi AI Teacher", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
+st.success("✅ Saathi Started Successfully")
+
 load_dotenv()
 
 st.markdown("""
@@ -100,16 +100,17 @@ for key, default in [("current_lesson", None), ("language", "English"), ("histor
 # ── Groq Client ───────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_groq_client():
-    api_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY"))
-    if not api_key:
+    try:
+        api_key = st.secrets["GROQ_API_KEY"]
+        return Groq(api_key=api_key)
+    except Exception as e:
+        st.error(f"Groq API key missing: {e}")
         return None
-    return Groq(api_key=api_key)
 
 client = get_groq_client()
+
 if client is None:
-    st.error("⚠️ GROQ_API_KEY is not set. Please add it in Streamlit Cloud → Settings → Secrets.")
     st.stop()
-TTS_LANG = {"English": "en", "Hindi": "hi", "Hinglish": "hi"}
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
 def generate_lesson(question, history, language):
@@ -167,7 +168,7 @@ st.markdown("<div class='app-header'><h1>🎓 Saathi AI Teacher</h1></div>", uns
 # ════════════════════════════════════════════════════════════════════════════
 # INPUT BAR
 # ════════════════════════════════════════════════════════════════════════════
-col_topic, col_lang, col_voice, col_btn = st.columns([5, 1.5, 1, 1])
+col_topic, col_lang, col_btn = st.columns([6, 2, 1])
 
 with col_topic:
     topic = st.text_input("topic", placeholder="Enter a topic or question (e.g. What is photosynthesis?)",
@@ -180,24 +181,8 @@ with col_lang:
         label_visibility="collapsed"
     )
 
-with col_voice:
-    audio_bytes = audio_recorder(text="", recording_color="#e74c3c", neutral_color="#4a6fa5", icon_size="lg")
-
 with col_btn:
     ask_clicked = st.button("▶ Teach Me", use_container_width=True)
-
-# Handle voice input
-if audio_bytes and not st.session_state.get("_last_audio") == audio_bytes:
-    st.session_state["_last_audio"] = audio_bytes
-    with st.spinner("Transcribing..."):
-        spoken = speech_to_text(audio_bytes)
-    if spoken:
-        st.session_state["_voice_topic"] = spoken
-        st.rerun()
-
-if st.session_state.get("_voice_topic"):
-    topic = st.session_state.pop("_voice_topic")
-    ask_clicked = True
 
 # ── Process question ──────────────────────────────────────────────────────────
 if ask_clicked and topic.strip():
@@ -238,10 +223,6 @@ with left:
         if example:
             st.markdown("**Example**")
             st.info(example)
-
-        tts_lang = TTS_LANG[st.session_state.language]
-        if st.button("🔊 Read Explanation", key="tts_btn"):
-            st.audio(text_to_speech(lesson["answer"], tts_lang))
     else:
         st.markdown("""
         <div style='text-align:center;padding:80px 0;color:#4a6fa5'>
