@@ -100,7 +100,8 @@ for key, default in [("current_lesson", None), ("language", "English"), ("histor
 # ── Groq Client ───────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_groq_client():
-    return Groq(api_key=os.getenv("GROQ_API_KEY"))
+    api_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY"))
+    return Groq(api_key=api_key)
 
 client = get_groq_client()
 TTS_LANG = {"English": "en", "Hindi": "hi", "Hinglish": "hi"}
